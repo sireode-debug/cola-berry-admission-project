@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cora</title>
+  <style>
+    body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.chat-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 300px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background-color: #f9f9f9;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    padding: 10px;
+}
+.chat-header {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+.chat-box {
+    height: 400px;
+    padding: 10px;
+    overflow-y: auto;
+    border-bottom: 1px solid #ccc;
+}
+
+.input-container {
+    display: flex;
+    padding: 10px;
+}
+
+#user-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.suggestions {
+            display: flex;
+            flex-direction: column;
+            margin-top: 10px;
+        }
+
+.suggestion {
+            background-color: #e9ecef;
+            padding: 8px;
+            border-radius: 5px;
+            margin-bottom: 5px;
+            cursor: pointer;
+        }
+
+.suggestion:hover {
+            background-color: #d6d6d6;
+        }
+
+button {
+    padding: 10px;
+    margin-left: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+        /* Blue background for bot messages */
+  .bot-message {
+    background-color: #00FFFF; /* Light blue color */
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+  }
+
+  /* Light grey background for user messages */
+  .user-message {
+    background-color: #C0C0C0; /* Light grey color */
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+  }
+
+  .typing {
+    color: #888;
+    font-style: italic;
+  }
+
+  </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">Meet Cora</div>
+        <div class="chat-box" id="chat-box"></div>
+        <div class="input-container">
+            <input type="text" id="user-input" placeholder="Type a message..." />
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+      const chatbotIntents = {
+        // Greeting Intent
+
+    greeting: {
+
+        english: {
+            phrases: [
+                      "Hello","Hi","Hey","Good morning","Good afternoon","Good evening","Greetings"
+                     ],
+            responses: [
+                        "Hello! How can I assist you today?","Hi there! What can I do for you?","Hey! How can I help?",
+                        "Good morning! What would you like to know?","Good afternoon! How can I assist?","Good evening! How can I help you today?",
+                        "Greetings! How can I assist you?"
+                       ]
+                  },
+			
+		french: {
+            phrases: [
+                      "Bonjour", "Salut", "Coucou", "Bon matin", "Bon après-midi", "Bonsoir", "Salutations"
+                     ],
+          responses: [
+                      "Bonjour ! Comment puis-je vous aider aujourd'hui ?","Salut ! Que puis-je faire pour vous ?",
+                      "Coucou ! Comment puis-je vous aider ?","Bon matin ! Que souhaitez-vous savoir ?",
+                      "Bon après-midi ! Comment puis-je vous assister ?",
+                      "Bonsoir ! Comment puis-je vous aider aujourd'hui ?",
+                      "Salutations ! Comment puis-je vous aider ?"
+                     ]
+                },
+
+        latin: {
+            phrases: [
+			          "Salve","Ave","Heus","Bona dies","Bona vespera","Salutationes"
+                     ],
+            responses: [
+                        "Salve! Quomodo te adiuvare possum hodie?","Ave! Quid agere tibi licet?","Heus! Quomodo te iuvare possum?",
+                        "Bona dies! Quid discere vis?","Bona vespera! Quomodo adiuvare te possum?","Salutationes! Quomodo adiuvare possum?"
+                       ]
+                }
+               },
+
+    // Farewell Intent
+    goodbye: {
+        english: {
+            phrases: [
+			          "Goodbye","See you later","Bye","Talk to you later","Catch you later","I'm leaving",
+                      "Take care"
+                     ],
+            responses: [
+                        "Goodbye! Have a great day!","See you later! Feel free to reach out whenever you need help.",
+                        "Bye! Take care!","Talk to you soon!","Catch you later!","I'm here whenever you need assistance again!"
+                       ]
+        },
+		french: {
+            phrases: [
+                      "Au revoir", "À plus tard", "Salut", "On se parle plus tard", "À la prochaine", "Je m'en vais", "Prenez soin de vous"
+                     ],
+          responses: [
+                      "Au revoir ! Passez une bonne journée !", "À plus tard ! N'hésitez pas à me contacter si vous avez besoin d'aide.",
+                      "Salut ! Prenez soin de vous !", "On se parle bientôt !", "À la prochaine !",
+                      "Je suis là si vous avez de nouveau besoin d'aide !"
+                     ]
+                },
+        latin: {
+            phrases: [
+			          "Vale","Postea te videbo","Valedico","Mox colloquemur","Cura ut valeas","Excedo"
+                     ],
+          responses: [
+                      "Vale! Bene valeas!","Postea te videbo! Quando volueris, adesto.","Valedico! Bene vale!",
+                      "Mox colloquemur!","Cura ut valeas!","Hic sum, si denuo auxilium opus erit!"
+                     ]
+               }
+              },
+
+    // Thank You Intent
+    thank_you: {
+        english: {
+            phrases: [
+			          "Thank you","Thanks a lot","Thanks","I appreciate your help",
+					  "Thanks for your assistance","Thank you so much"
+                      ],
+           responses: [
+                       "You're welcome!","Happy to help!","No problem, anytime!","You're very welcome!",
+                       "Glad I could help!"
+                      ]
+                 },
+		 french: {
+            phrases: [
+                      "Merci", "Merci beaucoup", "Merci", "J'apprécie votre aide", "Merci pour votre assistance", "Merci infiniment"
+                     ],
+            responses: [
+                        "Je vous en prie !", "Heureux de pouvoir aider !", "Pas de problème, n'importe quand !",
+                        "Vous êtes très bienvenu(e) !", "Content d'avoir pu aider !"
+                       ]
+        },
+        latin: {
+            phrases: [
+                      "Gratias tibi ago","Multas gratias","Gratias","Benevolentiam tuam laudo",
+                      "Ob auxilium gratias ago"
+                      ],
+           responses: [
+                        "Tibi gratias! Nihil est.","Laetus adiuvi!","Nulla res est, semper paratus!",
+                        "Gratum est me iuvare!",
+                        "Libens adiuvi!"
+                      ]
+               }
+               },
+
+    // Small Talk - How Are You Intent
+    small_talk_how_are_you: {
+        english: {
+            phrases: [
+                      "How are you?","How's it going?","How have you been?",
+                      "What's up?"
+                     ],
+          responses: [
+                      "I'm just a bot, but I'm doing great! How about you?",
+                      "I'm here and ready to assist you! How are you?",
+                      "I'm doing well, thanks! How can I help you today?"
+                     ]
+                },
+		french: {
+            phrases: [
+                      "Comment ça va ?", "Comment ça se passe ?", "Comment vas-tu ?", "Quoi de neuf ?"
+                     ],
+          responses: [
+                     "Je ne suis qu'un bot, mais je vais très bien ! Et vous ?",
+                     "Je suis là, prêt à vous aider ! Comment allez-vous ?",
+                     "Je vais bien, merci ! Comment puis-je vous aider aujourd'hui ?"
+                     ]
+                },
+         latin: {
+            phrases: [
+                      "Quomodo te habes?", "Quid agis?","Ut vales?","Quid novi?"
+                     ],
+          responses: [
+                     "Sum automaton, sed bene me habeo! Tu quid agis?",
+                     "Adsum et paratus te adiuvare! Quid agis?",
+                     "Bene mihi est, gratias! Quomodo te iuvare possum?"
+                     ]
+               }
+           }
+      };
+
+      const responses = {
+    "when will the grades be posted": "Grades will be posted within two weeks after the exam.",
+    "how do i improve my grades": "To improve your grades, consider attending tutoring sessions and participating in study groups.",
+    "when is the next assignment due": "The next assignment is due on the upcoming Monday.",
+    "what topics will be covered in the next exam": "State your Department.",
+    "generative ai department": "Generative AI Topics for exam: The next exam will cover chapters 4 to 6.",
+    "ai & machine learning department": "AI & Machine Learning Topics for exam: The next exam will cover chapters 4 to 6.",
+    "data science & business analytics department": "Data Science & Business Analytics Topics for exam: The next exam will cover chapters 1.",
+    "project management department": "Project Management Topics for exam: The next exam will cover chapters 14 to 18.",
+    "cyber security department": "Cyber Security Topics for exam: The next exam will cover chapters 5 to 11.",
+    "agile and scrum department": "Agile and Scrum Topics for exam: The next exam will cover chapters 19 to 20.",
+    "cloud computing department": "Cloud Computing Topics for exam: The next exam will cover chapters 3 to 10.",
+    "business and leadership department": "Business and Leadership Topics for exam: The next exam will cover chapters 9 to 12.",
+    "software development department": "Software Development Topics for exam: The next exam will cover chapters 11 to 16.",
+    "devOps department": "DevOps Topics for exam: The next exam will cover chapters 10 to 18.",
+    "it service and architecture department": "IT Service and Architecture Topics for exam: The next exam will cover chapters 2 to 14.",
+    "quality management department": "Quality Management Topics for exam: The next exam will cover chapters 4 to 15.",
+    "digital marketing department": "Digital Marketing Topics for exam: The next exam will cover chapters 12 to 17.",
+    "data analytics department": "Data Analytics Topics for exam: The next exam will cover chapters 9 to 10.",
+    "certified information systems security professional department": "CISSP Topics for exam: The next exam will cover chapters 10 to 12.",
+    "ui ux department": "UI UX Topics for exam: The next exam will cover chapters 10 to 16.",
+    "full stack developer department": "Full Stack Developer Topics for exam: The next exam will cover chapters 1 to 12.",
+    "how do i submit my assignment": "You can submit your assignment via the LMS portal.",
+    "can i get an extension on my assignment": "Please contact your instructor directly for assignment extensions.",
+    "what is my class schedule": "You can view your class schedule on the student portal.",
+    "generative ai class": "Generative AI class schedule: Monday 10 AM - 1 PM, Wednesday 2 PM - 4 PM.",
+    "ai and machine learning class": "AI & Machine Learning class schedule: Monday 10 AM - 12 PM, Wednesday 2 PM - 4 PM.",
+    "data science and business analytics class": "Data Science & Business Analytics class schedule: Tuesday 10 AM - 12 PM, Thursday 2 PM - 4 PM.",
+    "project management class": "Project Management class schedule: Wednesday 10 AM - 12 PM, Friday 2 PM - 4 PM.",
+    "cyber security class": "Cyber Security class schedule: Tuesday 2 PM - 4 PM, Thursday 10 AM - 12 PM.",
+    "agile and scrum class": "Agile and Scrum class schedule: Monday 4 PM - 6 PM, Wednesday 10 AM - 12 PM.",
+    "cloud computing class": "Cloud Computing class schedule: Tuesday 4 PM - 6 PM, Thursday 2 PM - 4 PM.",
+    "business and leadership class": "Business and Leadership class schedule: Monday 6 PM - 8 PM, Wednesday 4 PM - 6 PM.",
+    "software development class": "Software Development class schedule: Tuesday 6 PM - 8 PM, Thursday 4 PM - 6 PM.",
+    "devOps class": "DevOps class schedule: Monday 8 AM - 10 AM, Wednesday 8 AM - 10 AM.",
+    "it service and architecture class": "IT Service and Architecture class schedule: Tuesday 8 AM - 10 AM, Thursday 8 AM - 10 AM.",
+    "quality management class": "Quality Management class schedule: Monday 10 AM - 12 PM, Wednesday 2 PM - 4 PM.",
+    "digital marketing class": "Digital Marketing class schedule: Tuesday 10 AM - 12 PM, Thursday 2 PM - 4 PM.",
+    "data analytics class": "Data Analytics class schedule: Monday 2 PM - 4 PM, Friday 10 AM - 12 PM.",
+    "certified information systems security professional class": "CISSP class schedule: Wednesday 10 AM - 12 PM, Friday 2 PM - 4 PM.",
+    "ui ux class": "UI UX class schedule: Monday 4 PM - 6 PM, Wednesday 10 AM - 12 PM.",
+    "full stack developer class": "Full Stack Developer class schedule: Tuesday 4 PM - 6 PM, Thursday 2 PM - 4 PM.",
+    "how do i enroll in a course": "To enroll in a course, visit the registration section of the student portal.",
+    "what courses are available next semester": "Generative AI, AI & Machine Learning, Data Science & Business Analytics, Project Management, Cyber Security, Agile and Scrum, Cloud Computing, Business and Leadership, Software Development, DevOps, IT Service and Architecture, Quality Management, Digital Marketing, Data Analytics, Certified Information Systems Security Professional, UI UX, Full Stack Developer.",
+    "can i drop a course": "You can drop a course through the student portal before the drop deadline.",
+    "how do i apply for financial aid": "You can apply for financial aid by filling out the FAFSA form online.",
+    "what is the deadline for tuition payment": "The deadline for tuition payment is the end of the first week of classes.",
+    "can i get a refund if i drop a class": "You may be eligible for a refund if you drop a class within the refund period.",
+    "what are the library hours": "The library is open from 8 AM to 10 PM on weekdays, and 10 AM to 6 PM on weekends.",
+    "where is the student health center": "The student health center is located in Building B, Room 101.",
+    "how do i book a study room": "You can book a study room through the library's online booking system.",
+    "what events are happening on campus this week": "You can check the campus events calendar on the university website.",
+    "how do i join a club": "To join a club, visit the clubs and organizations section of the student portal.",
+    "how can i get counseling services": "You can get counseling services by making an appointment through the health center.",
+    "where can i find a tutor": "Tutors are available through the tutoring center located in Building A.",
+    "i forgot my password how can i reset it": "You can reset your password using the 'Forgot Password' link on the login page.",
+    "why can't i access my email": "If you can't access your email, please contact the IT help desk.",
+    "how do i connect to the campus wifi": "To connect to the campus Wi-Fi, use your student ID and password.",
+    "how do i apply for campus housing": "You can apply for campus housing through the housing portal.",
+    "what are the dining hall hours": "The dining hall is open from 7 AM to 8 PM on weekdays, and 8 AM to 7 PM on weekends.",
+    "can i change my meal plan": "You can change your meal plan by visiting the dining services office.",
+    "where can i find parking information": "Parking information is available on the campus parking services website.",
+    "is there a shuttle service on campus": "Yes, there is a shuttle service that runs between major campus locations.",
+    "what is the school's policy on plagiarism": "The school's policy on plagiarism can be found in the student handbook.",
+    "how do i appeal a grade": "To appeal a grade, submit a grade appeal form to the registrar's office.",
+    "how can i contact my advisor": "You can contact your advisor via email or by making an appointment through the student portal.",
+    "where can i find the contact information for the department head": "The contact information for the department head is available on the department's website."
+  };
+
+
+      // Function to get a random response based on the user's input and language
+      function getResponse(userInput) {
+    // First, try to get a response from the `responses` object
+    const lowerInput = userInput.toLowerCase();
+    const customResponse = responses[lowerInput];
+    if (customResponse) {
+        return customResponse;
+    }
+
+    // Fallback to `chatbotIntents` if no response was found in `responses`
+    let language = detectLanguage(userInput);
+    for (let intent in chatbotIntents) {
+        let phrases = chatbotIntents[intent][language].phrases;
+        for (let phrase of phrases) {
+            if (userInput.toLowerCase().includes(phrase.toLowerCase())) {
+                let responses = chatbotIntents[intent][language].responses;
+                let randomIndex = Math.floor(Math.random() * responses.length);
+                return responses[randomIndex];
+            }
+        }
+    }
+
+    return "I'm not sure how to respond to that. Can you please rephrase?";
+}
+
+
+      // Language detection function
+      function detectLanguage(input) {
+    // Get all phrases for French and Latin dynamically from chatbotIntents
+    const frenchPhrases = Object.keys(chatbotIntents).reduce((acc, intent) => {
+        if (chatbotIntents[intent].french) {
+            return acc.concat(chatbotIntents[intent].french.phrases);
+        }
+        return acc;
+    }, []);
+
+    const latinPhrases = Object.keys(chatbotIntents).reduce((acc, intent) => {
+        if (chatbotIntents[intent].latin) {
+            return acc.concat(chatbotIntents[intent].latin.phrases);
+        }
+        return acc;
+    }, []);
+
+    // Check if the input matches any French phrase
+    for (let phrase of frenchPhrases) {
+        if (input.toLowerCase().includes(phrase.toLowerCase())) {
+            return "french";
+        }
+    }
+
+    // Check if the input matches any Latin phrase
+    for (let phrase of latinPhrases) {
+        if (input.toLowerCase().includes(phrase.toLowerCase())) {
+            return "latin";
+        }
+    }
+
+    // Default to English if no match is found
+    return "english";
+}
+
+      function sendMessage() {
+        const userInput = document.getElementById("user-input").value;
+        if (userInput === "") return;
+
+        const chatBox = document.getElementById("chat-box");
+
+        // Append user's message to the chat box
+        const userMessageDiv = document.createElement("div");
+        userMessageDiv.classList.add("user-message");
+        userMessageDiv.textContent = `You: ${userInput}`;
+        chatBox.appendChild(userMessageDiv);
+
+        // Clear input
+        document.getElementById("user-input").value = "";
+
+        // Show "Bot is typing..." before the actual response
+        const typingDiv = document.createElement("div");
+        typingDiv.classList.add("bot-message");
+        typingDiv.textContent = "Cora is typing...";
+        chatBox.appendChild(typingDiv);
+
+        // Scroll to the bottom of the chat
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // Simulate bot response using the intent logic
+        setTimeout(() => {
+            typingDiv.remove();
+
+            const botResponse = getResponse(userInput);
+
+            const botMessageDiv = document.createElement("div");
+            botMessageDiv.classList.add("bot-message");
+            botMessageDiv.textContent = `Cora: ${botResponse}`;
+            chatBox.appendChild(botMessageDiv);
+
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }, 2000); // Simulate typing delay
+    }
+
+    </script>
+</body>
+</html>
