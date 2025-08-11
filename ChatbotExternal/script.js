@@ -7,6 +7,10 @@ const fileCancelButton = document.querySelector("#file-cancel");
 const chatbotToggler = document.querySelector("#chatbot-toggler");
 const closeChatbot = document.querySelector("#close-chatbot");
 
+// for FORM USE
+let hasUserReplied = false;
+
+
 // API SET UP
 const API_KEY = "AIzaSyDw1ioX_gpvPilQHKeGWtyHA4TiqPbjraE";
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
@@ -90,6 +94,80 @@ const handleOutgoingMessage = (e) => {
     outgoingMessageDiv.querySelector(".message-text").textContent = userData.message;
     chatBody.appendChild(outgoingMessageDiv);
     chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: "smooth" });
+
+    	 // Check if it's the first user reply
+if (!hasUserReplied) {
+  hasUserReplied = true;
+
+  // Optional bot message before form
+  const botIntro = createMessageElement(`
+    <svg class="bot-avatar" xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 16 16">
+      <!-- SVG paths here -->
+    </svg>
+    <div class="message-text">Thanks for reaching out! Just a few details to get started:</div>
+  `, "bot-message");
+  chatBody.appendChild(botIntro);
+
+  // Inject the form from template
+  const formTemplate = document.getElementById("form-template");
+  const formClone = formTemplate.content.cloneNode(true);
+  chatBody.appendChild(formClone);
+
+  setTimeout(() => {
+  chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: "smooth" });
+}, 50);
+
+  return; // ⛔ Stop here so the bot doesn't generate a response
+}
+
+// Add form submission handler for backend
+const contactForm = chatBody.querySelector('.contact-form');
+if (contactForm) {
+  contactForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = {
+      name: contactForm.elements['name'].value,
+      country: contactForm.elements['country'].value,
+      phone: contactForm.elements['phone'].value,
+      email: contactForm.elements['email'].value,
+      message: contactForm.elements['message'].value
+    };
+
+    fetch('http://localhost:3001/submit-form', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    })
+    .then(res => res.json())
+    .then(data => {
+      const botMessage = createMessageElement(`
+        <svg class="bot-avatar" xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 16 16">
+          <path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5M3 8.062C3 6.76 4.235 5.765 5.53 5.886a26.6 26.6 0 0 0 4.94 0C11.765 5.765 13 6.76 13 8.062v1.157a.93.93 0 0 1-.765.935c-.845.147-2.34.346-4.235.346s-3.39-.2-4.235-.346A.93.93 0 0 1 3 9.219z"/>
+          <path d="M8.5 1.866a1 1 0 1 0-1 0V3h-2A4.5 4.5 0 0 0 1 7.5V8a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1v1a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1v-.5A4.5 4.5 0 0 0 10.5 3h-2zM14 7.5V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7.5A3.5 3.5 0 0 1 5.5 4h5A3.5 3.5 0 0 1 14 7.5"/>
+        </svg>
+        <div class="message-text">${data.success ? data.message : 'Submission failed: ' + (data.error || 'Unknown error')}</div>
+      `, "bot-message");
+
+      chatBody.appendChild(botMessage);
+      chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: "smooth" });
+
+      if (data.success) contactForm.reset();
+    })
+    .catch(err => {
+      const errorMessage = createMessageElement(`
+        <svg class="bot-avatar" xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 16 16">
+          <path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5M3 8.062C3 6.76 4.235 5.765 5.53 5.886a26.6 26.6 0 0 0 4.94 0C11.765 5.765 13 6.76 13 8.062v1.157a.93.93 0 0 1-.765.935c-.845.147-2.34.346-4.235.346s-3.39-.2-4.235-.346A.93.93 0 0 1 3 9.219z"/>
+          <path d="M8.5 1.866a1 1 0 1 0-1 0V3h-2A4.5 4.5 0 0 0 1 7.5V8a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1v1a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1v-.5A4.5 4.5 0 0 0 10.5 3h-2zM14 7.5V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7.5A3.5 3.5 0 0 1 5.5 4h5A3.5 3.5 0 0 1 14 7.5"/>
+        </svg>
+        <div class="message-text" style="color: red;">Error submitting form: ${err.message}</div>
+      `, "bot-message");
+
+      chatBody.appendChild(errorMessage);
+      chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: "smooth" });
+    });
+  });
+}
 
     // Simulate bot response with thinking indicator after a delay
     setTimeout(() => {
