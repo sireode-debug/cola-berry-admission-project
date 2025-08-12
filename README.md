@@ -1,1 +1,0 @@
-# cola-berry-admission-project
